@@ -13,7 +13,7 @@ def git_clone(repo_uri: str, branch: str):
     return dsl.ContainerSpec(
         image='alpine/git',
         command=[
-            'sh', '-c', '''git clone --depth=1 --branch $0 $1 /data'''
+            'sh', '-c', '''git clone --depth=1 --branch $0 $1 /data && chmod a+rwx /data'''
         ],
 
         args=[branch,repo_uri]
@@ -25,7 +25,31 @@ def ls():
     return dsl.ContainerSpec(
         image='alpine',
         command=[
-            'sh', '-c', '''ls -li /data'''
+            'sh', '-c', '''chmod -R a+rw /data && ls -li / && ls -li /data'''
+        ],
+
+        args=[]
+    )
+
+@dsl.container_component
+def ls2():
+    """Log a greeting and return it as an output."""
+    return dsl.ContainerSpec(
+        image='alpine',
+        command=[
+            'sh', '-c', '''ls -li /data/training'''
+        ],
+
+        args=[]
+    )
+
+@dsl.container_component
+def prep():
+    """Log a greeting and return it as an output."""
+    return dsl.ContainerSpec(
+        image='quay.io/rdejana/python:0.1',
+        command=[
+            'sh', '-c', '''ls -li /data && whoami && bash /data/downloadAndPrepBasic.sh'''
         ],
 
         args=[]
@@ -56,8 +80,28 @@ def my_pipeline():
 
     task2.after(task1)
 
+
+    task3 = prep()
+    kubernetes.mount_pvc(
+        task3,
+        pvc_name=pvc1.outputs['name'],
+        mount_path='/data',
+    )
+
+    task3.after(task2)
+
+    task4 = ls()
+    kubernetes.mount_pvc(
+        task4,
+        pvc_name=pvc1.outputs['name'],
+        mount_path='/data',
+    )
+    task4.set_caching_options(False)
+    task4.after(task3)
+
+
     delete_pvc1 = kubernetes.DeletePVC(
         pvc_name=pvc1.outputs['name']
-    ).after(task2)
+    ).after(task4)
 
 compiler.Compiler().compile(my_pipeline, package_path='pvc.yaml')
