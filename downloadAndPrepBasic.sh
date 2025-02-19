@@ -17,3 +17,5 @@ cp DATASETS/voc/test/annotations/* test_labels
 cp DATASETS/voc/train/annotations/* train_labels
 
 rm -fR DATASETS
+ls -li
+pwd
