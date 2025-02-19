@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd /data
+
 #downlaod data
 wget -O DATASETS.tar.xz 'https://www.dropbox.com/s/qtowh6tq57kd2ss/DATASETS.tar.xz?dl=1'
 tar xvf DATASETS.tar.xz
