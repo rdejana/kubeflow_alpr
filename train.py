@@ -5,16 +5,16 @@ import numpy as np
 import torch
 
 
-path_images = 'images'
-path_train_labels = 'train_labels'
-path_test_labels = 'test_labels'
-path_save_to = "saved"
+path_images = '/data/images'
+path_train_labels = '/data/train_labels'
+path_test_labels = '/data/test_labels'
+path_save_to = "/data/saved"
 numberOfEpochs = 2
 
 # data augmentation
 custom_transforms = transforms.Compose([
     transforms.ToPILImage(),
-    transforms.Resize((50)),
+    transforms.Resize(50),
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(15),
     transforms.ToTensor(),
