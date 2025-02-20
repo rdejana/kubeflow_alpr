@@ -47,7 +47,7 @@ def ls2():
 def prep():
     """Log a greeting and return it as an output."""
     return dsl.ContainerSpec(
-        image='quay.io/rdejana/python:0.4.1',
+        image='quay.io/rdejana/python:0.5m',
         command=[
             'sh', '-c', '''ls -li /data && whoami && bash /data/downloadAndPrepBasic.sh'''
         ],
@@ -56,19 +56,30 @@ def prep():
     )
 
 @dsl.container_component
-def train(saved_model: Output[Model]):
+def train(s3Endpoint:str,
+          s3AccessKey: str,
+          s3SecretKey: str,
+          epochs:int,
+          model_name: str,
+          saved_model: Output[Model]):
     """Log a greeting and return it as an output."""
+    saved_model.framework = 'pytorch'
     return dsl.ContainerSpec(
-        image='quay.io/rdejana/python:0.5',
+        image='quay.io/rdejana/python:0.5m',
         command=[
-            'sh', '-c', '''/usr/local/bin/python /data/train.py && mv model.pth $0'''
+            'sh', '-c', '''/usr/local/bin/python /data/train.py $1 $2 $3 $4 $5 && mv /data/model.pth $0'''
         ],
 
-        args=[saved_model.path]
+        args=[saved_model.path,s3Endpoint,s3AccessKey,s3SecretKey,epochs,model_name]
     )
 
-@dsl.pipeline
-def my_pipeline():
+@dsl.pipeline(name='exploring')
+def my_pipeline(s3_endpoint: str="minio-service:9000",
+                s3_accesskey: str="minio",
+                s3_secretkey: str="minio123",
+                epochs: int=2,
+                model_name: str = "fasterrcnn_resnet50_fpn"):
+    # let's start by adding the bucket stuff
     pvc1 = kubernetes.CreatePVC(
         # can also use pvc_name instead of pvc_name_suffix to use a pre-existing PVC
         pvc_name_suffix='-my-pvc',
@@ -77,60 +88,46 @@ def my_pipeline():
         storage_class_name='standard',
     )
 
-    task1 = git_clone(repo_uri='https://github.com/rdejana/kubeflow_alpr',branch='main')
+    git_task = git_clone(repo_uri='https://github.com/rdejana/kubeflow_alpr',branch='main')
     kubernetes.mount_pvc(
-        task1,
-        pvc_name=pvc1.outputs['name'],
-        mount_path='/data',
-    )
-    task2 = ls()
-    kubernetes.mount_pvc(
-        task2,
+        git_task,
         pvc_name=pvc1.outputs['name'],
         mount_path='/data',
     )
 
-    task2.after(task1)
 
 
-    task3 = prep()
+    prep_task = prep()
     kubernetes.mount_pvc(
-        task3,
+        prep_task,
         pvc_name=pvc1.outputs['name'],
         mount_path='/data',
     )
 
-    task3.after(task2)
+    prep_task.after(git_task)
 
-    task4 = ls()
+
+
+    train_task = train(
+        s3Endpoint=s3_endpoint
+        ,s3AccessKey=s3_accesskey,
+        s3SecretKey=s3_secretkey,
+        epochs=epochs,
+        model_name=model_name)
     kubernetes.mount_pvc(
-        task4,
+        train_task,
         pvc_name=pvc1.outputs['name'],
         mount_path='/data',
     )
-    task4.set_caching_options(False)
-    task4.after(task3)
+    # figured out how to set limits
+    train_task.set_cpu_limit("6000m")
+    train_task.set_memory_limit("10G")
+    train_task.after(prep_task)
 
-    task5 = train()
-    kubernetes.mount_pvc(
-        task5,
-        pvc_name=pvc1.outputs['name'],
-        mount_path='/data',
-    )
-    task5.set_cpu_limit("6000m")
-    task5.set_memory_limit("10G")
-    task5.after(task4)
 
-    task6 = ls2()
-    kubernetes.mount_pvc(
-        task6,
-        pvc_name=pvc1.outputs['name'],
-        mount_path='/data/saved',
-    )
-    task6.after(task5)
 
     delete_pvc1 = kubernetes.DeletePVC(
         pvc_name=pvc1.outputs['name']
-    ).after(task6)
+    ).after(train_task)
 
 compiler.Compiler().compile(my_pipeline, package_path='pvc.yaml')

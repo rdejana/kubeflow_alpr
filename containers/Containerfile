@@ -1,8 +1,8 @@
 #  --build-arg user_id=`id -u`
 FROM python:3.12-bullseye
 
-RUN pip install --upgrade pip &&  pip install kfp kfp[kubernetes] detecto
-
+RUN pip install --upgrade pip &&  pip install kfp kfp[kubernetes] detecto minio
+RUN pip list
 RUN apt-get update && apt-get -y install sudo libgl1-mesa-glx vim
 
 # add a user so as not to run as root
@@ -16,5 +16,3 @@ RUN chown dev /workspace && chmod +rw /workspace
 
 # switch to default user
 USER dev
-#COPY *.sh ./
-#COPY *.py ./
