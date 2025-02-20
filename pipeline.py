@@ -37,7 +37,7 @@ def ls2():
     return dsl.ContainerSpec(
         image='alpine',
         command=[
-            'sh', '-c', '''ls -li /data/training'''
+            'sh', '-c', '''ls -li /data'''
         ],
 
         args=[]
@@ -47,9 +47,21 @@ def ls2():
 def prep():
     """Log a greeting and return it as an output."""
     return dsl.ContainerSpec(
-        image='quay.io/rdejana/python:0.1',
+        image='quay.io/rdejana/python:0.4.1',
         command=[
             'sh', '-c', '''ls -li /data && whoami && bash /data/downloadAndPrepBasic.sh'''
+        ],
+
+        args=[]
+    )
+
+@dsl.container_component
+def train():
+    """Log a greeting and return it as an output."""
+    return dsl.ContainerSpec(
+        image='quay.io/rdejana/python:0.4.1',
+        command=[
+            'sh', '-c', '''/usr/local/bin/python /data/train.py'''
         ],
 
         args=[]
@@ -99,9 +111,26 @@ def my_pipeline():
     task4.set_caching_options(False)
     task4.after(task3)
 
+    task5 = train()
+    kubernetes.mount_pvc(
+        task5,
+        pvc_name=pvc1.outputs['name'],
+        mount_path='/data',
+    )
+    task5.set_cpu_limit("6000m")
+    task5.set_memory_limit("10G")
+    task5.after(task4)
+
+    task6 = ls2()
+    kubernetes.mount_pvc(
+        task5,
+        pvc_name=pvc1.outputs['name'],
+        mount_path='/data',
+    )
+    task6.after(task5)
 
     delete_pvc1 = kubernetes.DeletePVC(
         pvc_name=pvc1.outputs['name']
-    ).after(task4)
+    ).after(task6)
 
 compiler.Compiler().compile(my_pipeline, package_path='pvc.yaml')

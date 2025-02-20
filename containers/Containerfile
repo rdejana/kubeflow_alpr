@@ -1,0 +1,20 @@
+#  --build-arg user_id=`id -u`
+FROM python:3.12-bullseye
+
+RUN pip install --upgrade pip &&  pip install kfp kfp[kubernetes] detecto
+
+RUN apt-get update && apt-get -y install sudo libgl1-mesa-glx vim
+
+# add a user so as not to run as root
+
+RUN useradd -ms /bin/bash -u 1001 -g root -G sudo -p $(openssl passwd -1 password) dev
+RUN chown dev /home/dev
+
+WORKDIR /workspace
+ENV PYTHONPATH /workspace:$PYTHONPATH
+RUN chown dev /workspace && chmod +rw /workspace
+
+# switch to default user
+USER dev
+#COPY *.sh ./
+#COPY *.py ./

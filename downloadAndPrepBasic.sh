@@ -10,6 +10,7 @@ rm DATASETS.tar.xz
 mkdir images
 mkdir test_labels
 mkdir train_labels
+mkdir saved
 
 # doing to use a min set of images to start
 cp DATASETS/voc/test/images/* images
