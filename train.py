@@ -31,20 +31,23 @@ custom_transforms = transforms.Compose([
 # %% dataset and dataloader
 # trained_labels = ['apple', 'banana']
 trained_labels = ['license-plate']
-train_dataset = core.Dataset(image_folder=path_images, label_data=path_train_labels, transform=custom_transforms)
-test_dataset = core.Dataset(image_folder=path_images, label_data=path_test_labels, transform=custom_transforms)
+#*****************
 
-train_loader = core.DataLoader(train_dataset, batch_size=2, shuffle=False)
-test_loader = core.DataLoader(test_dataset, batch_size=2, shuffle=False)
-# %% initialize model
-mps_device = torch.device("mps")
 
+#train_dataset = core.Dataset(image_folder=path_images, label_data=path_train_labels, transform=custom_transforms)
+#test_dataset = core.Dataset(image_folder=path_images, label_data=path_test_labels, transform=custom_transforms)
+
+#train_loader = core.DataLoader(train_dataset, batch_size=2, shuffle=False)
+#test_loader = core.DataLoader(test_dataset, batch_size=2, shuffle=False)
 
 model = core.Model(trained_labels)
 
 
 # %% perform the training
-losses = model.fit(train_loader, test_dataset, epochs=numberOfEpochs, verbose=True)
+#losses = model.fit(train_loader, test_dataset, epochs=numberOfEpochs, verbose=True)
+
+
+#*****************
 
 # dave to model.pth
 #model.save(path_save_to + '/model.pth')
