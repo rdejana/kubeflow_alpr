@@ -46,7 +46,7 @@ losses = model.fit(train_loader, test_dataset, epochs=numberOfEpochs, verbose=Tr
 model.save("/data/model.pth")
 
 # todo, externalize
-client = Minio("minio-service",
+client = Minio("minio-service:9000",
                access_key="minio",
                secret_key="minio123",
                secure=False
