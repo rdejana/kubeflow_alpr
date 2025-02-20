@@ -7,11 +7,16 @@ import sys
 from minio import Minio
 
 
+# start reading args
+# data/train.py $1 $2 $3 $4
+# args=[saved_model.path,s3Endpoint,s3AccessKey,s3SecretKey,epochs]
+
+int(sys.argv[4])
 path_images = '/data/images'
 path_train_labels = '/data/train_labels'
 path_test_labels = '/data/test_labels'
 path_save_to = "/data/saved"
-numberOfEpochs = 2
+numberOfEpochs = int(sys.argv[4]) # no error handling, but ok for this
 
 # data augmentation
 custom_transforms = transforms.Compose([
