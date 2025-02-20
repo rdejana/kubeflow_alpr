@@ -17,7 +17,12 @@ path_images = '/data/images'
 path_train_labels = '/data/train_labels'
 path_test_labels = '/data/test_labels'
 path_save_to = "/data/saved"
+modelName = sys.argv[5] #"fasterrcnn_resnet50_fpn"
+
 numberOfEpochs = int(sys.argv[4]) # no error handling, but ok for this
+
+print("Running model: ",modelName)
+print("Number of epochs: ",numberOfEpochs)
 
 # data augmentation
 custom_transforms = transforms.Compose([
@@ -41,7 +46,7 @@ trained_labels = ['license-plate']
 #train_loader = core.DataLoader(train_dataset, batch_size=2, shuffle=False)
 #test_loader = core.DataLoader(test_dataset, batch_size=2, shuffle=False)
 
-model = core.Model(trained_labels)
+model = core.Model(trained_labels,model_name=modelName)
 
 
 # %% perform the training
