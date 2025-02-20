@@ -56,15 +56,15 @@ def prep():
     )
 
 @dsl.container_component
-def train():
+def train(saved_model: Output[Model]):
     """Log a greeting and return it as an output."""
     return dsl.ContainerSpec(
-        image='quay.io/rdejana/python:0.4.1',
+        image='quay.io/rdejana/python:0.5',
         command=[
-            'sh', '-c', '''/usr/local/bin/python /data/train.py'''
+            'sh', '-c', '''/usr/local/bin/python /data/train.py && mv model.pth $0'''
         ],
 
-        args=[]
+        args=[saved_model.path]
     )
 
 @dsl.pipeline
@@ -123,9 +123,9 @@ def my_pipeline():
 
     task6 = ls2()
     kubernetes.mount_pvc(
-        task5,
+        task6,
         pvc_name=pvc1.outputs['name'],
-        mount_path='/data',
+        mount_path='/data/saved',
     )
     task6.after(task5)
 
